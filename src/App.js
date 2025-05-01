@@ -30,7 +30,7 @@ const App = () => {
 
   const fetchPhotos = useCallback(async () => {
     try {
-      const response = await fetch('https://photo-gallery-backend.onrender.com/api/images');
+      const response = await fetch('https://photo-gallery-rtt2.onrender.com/api/images');
       if (!response.ok) {
         throw new Error('Failed to fetch photos');
       }
@@ -66,7 +66,7 @@ const App = () => {
 
   const handleDeletePhoto = useCallback(async (photoId) => {
     try {
-      const response = await fetch(`https://photo-gallery-backend.onrender.com/api/images/${photoId}`, {
+      const response = await fetch(`https://photo-gallery-rtt2.onrender.com/api/images/${photoId}`, {
         method: 'DELETE',
         headers: {
           'Accept': 'application/json',

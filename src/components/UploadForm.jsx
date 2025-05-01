@@ -57,7 +57,7 @@ const UploadForm = ({ onUpload }) => {
             const formData = new FormData();
             formData.append('image', selectedFile);
 
-            const response = await fetch('https://photo-gallery-backend.onrender.com/api/upload', {
+            const response = await fetch('https://photo-gallery-rtt2.onrender.com/api/upload', {
                 method: 'POST',
                 body: formData,
             });
