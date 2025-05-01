@@ -50,9 +50,14 @@ const upload = multer({
 // Serve static files from the public directory
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
+// Root endpoint
+app.get('/', (req, res) => {
+    res.json({ status: 'ok', message: 'Server is running' });
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({ status: 'ok' });
+    res.json({ status: 'ok', message: 'Server is healthy' });
 });
 
 // Upload endpoint
@@ -127,6 +132,11 @@ app.get('/api/images', (req, res) => {
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// Handle 404 errors
+app.use((req, res) => {
+    res.status(404).json({ error: 'Route not found' });
 });
 
 app.listen(PORT, () => {
