@@ -4,7 +4,6 @@ import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 const UploadForm = ({ onUpload }) => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [preview, setPreview] = useState(null);
-    const [title, setTitle] = useState('');
     const [tags, setTags] = useState('');
     const [error, setError] = useState('');
     const [isUploading, setIsUploading] = useState(false);
@@ -53,22 +52,28 @@ const UploadForm = ({ onUpload }) => {
             return;
         }
 
-        if (!title.trim()) {
-            setError('Please enter a title');
-            return;
-        }
-
         setIsUploading(true);
 
         try {
-            // Here you would typically upload the file to your server
-            // For now, we'll simulate an upload with a delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('tags', tags);
+
+            const response = await fetch('http://localhost:5000/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error('Upload failed');
+            }
+
+            const data = await response.json();
 
             const newPhoto = {
-                id: Date.now(),
-                title: title.trim(),
-                url: preview,
+                id: data.filename.split('.')[0],
+                title: data.title,
+                url: data.imageUrl,
                 tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
             };
 
@@ -77,15 +82,15 @@ const UploadForm = ({ onUpload }) => {
             // Reset form
             setSelectedFile(null);
             setPreview(null);
-            setTitle('');
             setTags('');
             setError('');
         } catch (err) {
             setError('Failed to upload image. Please try again.');
+            console.error('Upload error:', err);
         } finally {
             setIsUploading(false);
         }
-    }, [selectedFile, title, tags, preview, onUpload]);
+    }, [selectedFile, tags, onUpload]);
 
     const handleRemoveFile = useCallback(() => {
         setSelectedFile(null);
@@ -138,24 +143,6 @@ const UploadForm = ({ onUpload }) => {
                                 onChange={handleFileChange}
                             />
                         </label>
-                    </div>
-
-                    {/* Title Input */}
-                    <div>
-                        <label
-                            htmlFor="title"
-                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                        >
-                            Title
-                        </label>
-                        <input
-                            type="text"
-                            id="title"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                            placeholder="Enter photo title"
-                        />
                     </div>
 
                     {/* Tags Input */}

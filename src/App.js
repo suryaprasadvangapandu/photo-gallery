@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { photos } from './data/photos';
 import ImageCard from './components/ImageCard';
 import SearchBar from './components/SearchBar';
 import Modal from './components/Modal';
@@ -16,7 +15,8 @@ const App = () => {
         localStorage.getItem('darkMode') === null);
   });
   const [showUploadForm, setShowUploadForm] = useState(false);
-  const [galleryPhotos, setGalleryPhotos] = useState(photos);
+  const [galleryPhotos, setGalleryPhotos] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Update localStorage and document class
@@ -27,6 +27,25 @@ const App = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
+
+  const fetchPhotos = useCallback(async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/images');
+      if (!response.ok) {
+        throw new Error('Failed to fetch photos');
+      }
+      const photos = await response.json();
+      setGalleryPhotos(photos);
+    } catch (error) {
+      console.error('Error fetching photos:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPhotos();
+  }, [fetchPhotos]);
 
   const handleViewAllPhotos = useCallback(() => {
     setSearchTerm('');
@@ -44,6 +63,38 @@ const App = () => {
     setGalleryPhotos(prevPhotos => [newPhoto, ...prevPhotos]);
     setShowUploadForm(false);
   }, []);
+
+  const handleDeletePhoto = useCallback(async (photoId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/images/${photoId}`, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete photo');
+      }
+
+      // Update the gallery photos state
+      setGalleryPhotos(prevPhotos => prevPhotos.filter(photo => photo.id !== photoId));
+
+      // If the deleted photo was selected in the modal, close the modal
+      if (selectedPhoto?.id === photoId) {
+        setSelectedPhoto(null);
+      }
+    } catch (error) {
+      console.error('Error deleting photo:', error);
+      if (error.message === 'Failed to fetch') {
+        alert('Could not connect to the server. Please make sure the server is running.');
+      } else {
+        alert(error.message || 'Failed to delete photo');
+      }
+    }
+  }, [selectedPhoto]);
 
   const filteredPhotos = useMemo(() => {
     if (!searchTerm.trim()) return galleryPhotos;
@@ -95,15 +146,22 @@ const App = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filteredPhotos.map((photo) => (
-            <ImageCard
-              key={photo.id}
-              photo={photo}
-              onClick={() => handlePhotoClick(photo)}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredPhotos.map((photo) => (
+              <ImageCard
+                key={photo.id}
+                photo={photo}
+                onClick={() => handlePhotoClick(photo)}
+                onDelete={handleDeletePhoto}
+              />
+            ))}
+          </div>
+        )}
       </div>
       <Modal photo={selectedPhoto} onClose={handleModalClose} />
     </div>

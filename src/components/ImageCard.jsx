@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { HeartIcon, ShareIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { HeartIcon, ShareIcon, EyeIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 
-const ImageCard = ({ photo, onClick }) => {
+const ImageCard = ({ photo, onClick, onDelete }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleLike = useCallback((e) => {
     e.stopPropagation();
@@ -23,6 +24,21 @@ const ImageCard = ({ photo, onClick }) => {
     navigator.clipboard.writeText(photo.url);
     setShowShareOptions(false);
   }, [photo.url]);
+
+  const handleDelete = useCallback(async (e) => {
+    e.stopPropagation();
+    if (isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      await onDelete(photo.id);
+    } catch (error) {
+      console.error('Error deleting photo:', error);
+      // The error will be handled by the App component
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [photo.id, onDelete, isDeleting]);
 
   return (
     <div
@@ -47,7 +63,7 @@ const ImageCard = ({ photo, onClick }) => {
       </div>
 
       <div
-        className={`absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 flex flex-col justify-end`}
+        className={`absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 flex flex-col justify-end`}
       >
         <h3 className="text-white text-lg font-semibold mb-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
           {photo.title}
@@ -63,7 +79,7 @@ const ImageCard = ({ photo, onClick }) => {
           ))}
         </div>
 
-        <div className="flex items-center gap-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+        <div className="flex items-center gap-2">
           <button
             onClick={handleLike}
             className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-200"
@@ -75,7 +91,6 @@ const ImageCard = ({ photo, onClick }) => {
               <HeartIcon className="h-5 w-5 text-white" />
             )}
           </button>
-
           <button
             onClick={handleShare}
             className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-200"
@@ -83,11 +98,23 @@ const ImageCard = ({ photo, onClick }) => {
           >
             <ShareIcon className="h-5 w-5 text-white" />
           </button>
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-200 disabled:opacity-50"
+            aria-label="Delete photo"
+          >
+            {isDeleting ? (
+              <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <TrashIcon className="h-5 w-5 text-white" />
+            )}
+          </button>
+        </div>
 
-          <div className="flex items-center gap-1 text-white text-sm">
-            <EyeIcon className="h-5 w-5" />
-            <span>{Math.floor(Math.random() * 1000)}</span>
-          </div>
+        <div className="flex items-center gap-1 text-white text-sm">
+          <EyeIcon className="h-5 w-5" />
+          <span>{Math.floor(Math.random() * 1000)}</span>
         </div>
 
         {showShareOptions && (
