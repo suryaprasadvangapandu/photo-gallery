@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 5000;
 
 // Enable CORS with specific options
 app.use(cors({
-    origin: ['http://localhost:3000', 'https://photo-gallery-suryaprasadvangapandu.vercel.app'],
+    origin: '*', // Allow all origins for now
     methods: ['GET', 'POST', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Accept']
 }));
@@ -50,6 +50,11 @@ const upload = multer({
 // Serve static files from the public directory
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok' });
+});
+
 // Upload endpoint
 app.post('/api/upload', upload.single('image'), (req, res) => {
     if (!req.file) {
@@ -57,7 +62,6 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
     }
 
     const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-    // Generate a more user-friendly title
     const date = new Date();
     const title = `Photo ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
 
@@ -75,12 +79,10 @@ app.delete('/api/images/:id', (req, res) => {
         const id = req.params.id;
         const uploadDir = path.join(__dirname, 'public/uploads');
 
-        // Check if upload directory exists
         if (!fs.existsSync(uploadDir)) {
             return res.status(404).json({ error: 'Upload directory not found' });
         }
 
-        // Find the file that matches the ID
         const files = fs.readdirSync(uploadDir);
         const fileToDelete = files.find(file => file.startsWith(id));
 
@@ -89,8 +91,6 @@ app.delete('/api/images/:id', (req, res) => {
         }
 
         const filePath = path.join(uploadDir, fileToDelete);
-
-        // Delete the file
         fs.unlinkSync(filePath);
         res.json({ success: true, message: 'File deleted successfully' });
     } catch (error) {

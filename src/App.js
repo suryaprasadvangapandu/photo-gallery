@@ -30,7 +30,7 @@ const App = () => {
 
   const fetchPhotos = useCallback(async () => {
     try {
-      const response = await fetch('https://photo-gallery-rtt2.onrender.com/api/images');
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/images`);
       if (!response.ok) {
         throw new Error('Failed to fetch photos');
       }
@@ -38,6 +38,8 @@ const App = () => {
       setGalleryPhotos(photos);
     } catch (error) {
       console.error('Error fetching photos:', error);
+      // Show a more user-friendly error message
+      alert('Could not connect to the server. Please try again later.');
     } finally {
       setIsLoading(false);
     }
@@ -66,7 +68,7 @@ const App = () => {
 
   const handleDeletePhoto = useCallback(async (photoId) => {
     try {
-      const response = await fetch(`https://photo-gallery-rtt2.onrender.com/api/images/${photoId}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/images/${photoId}`, {
         method: 'DELETE',
         headers: {
           'Accept': 'application/json',
@@ -89,7 +91,7 @@ const App = () => {
     } catch (error) {
       console.error('Error deleting photo:', error);
       if (error.message === 'Failed to fetch') {
-        alert('Could not connect to the server. Please make sure the server is running.');
+        alert('Could not connect to the server. Please try again later.');
       } else {
         alert(error.message || 'Failed to delete photo');
       }
