@@ -1,39 +1,91 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { photos } from './data/photos';
 import ImageCard from './components/ImageCard';
 import SearchBar from './components/SearchBar';
 import Modal from './components/Modal';
+import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 
-function App() {
+const App = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // Check if user has a dark mode preference
+    return localStorage.getItem('darkMode') === 'true' ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches &&
+        localStorage.getItem('darkMode') === null);
+  });
 
-  const filteredPhotos = photos.filter((photo) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
+  useEffect(() => {
+    // Update localStorage and document class
+    localStorage.setItem('darkMode', isDarkMode);
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  const handleViewAllPhotos = useCallback(() => {
+    setSearchTerm('');
+  }, []);
+
+  const handlePhotoClick = useCallback((photo) => {
+    setSelectedPhoto(photo);
+  }, []);
+
+  const handleModalClose = useCallback(() => {
+    setSelectedPhoto(null);
+  }, []);
+
+  const filteredPhotos = useMemo(() => {
+    if (!searchTerm.trim()) return photos;
+
+    const searchLower = searchTerm.toLowerCase().trim();
+    return photos.filter((photo) =>
       photo.title.toLowerCase().includes(searchLower) ||
       photo.tags.some((tag) => tag.toLowerCase().includes(searchLower))
     );
-  });
+  }, [searchTerm]);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white py-8 px-4">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300 py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">Photo Gallery</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl font-bold">Photo Gallery</h1>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleViewAllPhotos}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+            >
+              View All Photos
+            </button>
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
+              aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDarkMode ? (
+                <SunIcon className="h-6 w-6 text-yellow-500" />
+              ) : (
+                <MoonIcon className="h-6 w-6 text-gray-700" />
+              )}
+            </button>
+          </div>
+        </div>
         <SearchBar searchTerm={searchTerm} onSearchChange={setSearchTerm} />
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredPhotos.map((photo) => (
             <ImageCard
               key={photo.id}
               photo={photo}
-              onClick={setSelectedPhoto}
+              onClick={handlePhotoClick}
             />
           ))}
         </div>
       </div>
-      <Modal photo={selectedPhoto} onClose={() => setSelectedPhoto(null)} />
+      <Modal photo={selectedPhoto} onClose={handleModalClose} />
     </div>
   );
-}
+};
 
-export default App;
+export default React.memo(App);
