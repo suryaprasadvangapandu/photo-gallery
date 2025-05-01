@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 5000;
 
 // Enable CORS with specific options
 app.use(cors({
-    origin: 'http://localhost:3000', // React app's URL
+    origin: ['http://localhost:3000', 'https://photo-gallery-suryaprasadvangapandu.vercel.app'],
     methods: ['GET', 'POST', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Accept']
 }));

@@ -43,59 +43,59 @@ const UploadForm = ({ onUpload }) => {
         reader.readAsDataURL(file);
     }, []);
 
-    const handleSubmit = useCallback(async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
-
         if (!selectedFile) {
-            setError('Please select a file to upload');
+            setError('Please select an image');
             return;
         }
 
         setIsUploading(true);
+        setError('');
 
         try {
             const formData = new FormData();
             formData.append('image', selectedFile);
-            formData.append('tags', tags);
 
-            const response = await fetch('http://localhost:5000/api/upload', {
+            const response = await fetch('https://photo-gallery-backend.onrender.com/api/upload', {
                 method: 'POST',
                 body: formData,
             });
 
             if (!response.ok) {
-                throw new Error('Upload failed');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to upload image');
             }
 
             const data = await response.json();
-
             const newPhoto = {
                 id: data.filename.split('.')[0],
-                title: data.title,
                 url: data.imageUrl,
-                tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
+                title: data.title,
+                tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag)
             };
 
             onUpload(newPhoto);
-
-            // Reset form
-            setSelectedFile(null);
-            setPreview(null);
-            setTags('');
-            setError('');
-        } catch (err) {
-            setError('Failed to upload image. Please try again.');
-            console.error('Upload error:', err);
+            resetForm();
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            setError(error.message || 'Failed to upload image. Please try again.');
         } finally {
             setIsUploading(false);
         }
-    }, [selectedFile, tags, onUpload]);
+    };
 
     const handleRemoveFile = useCallback(() => {
         setSelectedFile(null);
         setPreview(null);
     }, []);
+
+    const resetForm = () => {
+        setSelectedFile(null);
+        setPreview(null);
+        setTags('');
+        setError('');
+    };
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
