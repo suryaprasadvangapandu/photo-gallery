@@ -3,7 +3,8 @@ import { photos } from './data/photos';
 import ImageCard from './components/ImageCard';
 import SearchBar from './components/SearchBar';
 import Modal from './components/Modal';
-import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
+import UploadForm from './components/UploadForm';
+import { SunIcon, MoonIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -14,6 +15,8 @@ const App = () => {
       (window.matchMedia('(prefers-color-scheme: dark)').matches &&
         localStorage.getItem('darkMode') === null);
   });
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [galleryPhotos, setGalleryPhotos] = useState(photos);
 
   useEffect(() => {
     // Update localStorage and document class
@@ -37,15 +40,20 @@ const App = () => {
     setSelectedPhoto(null);
   }, []);
 
+  const handleUploadPhoto = useCallback((newPhoto) => {
+    setGalleryPhotos(prevPhotos => [newPhoto, ...prevPhotos]);
+    setShowUploadForm(false);
+  }, []);
+
   const filteredPhotos = useMemo(() => {
-    if (!searchTerm.trim()) return photos;
+    if (!searchTerm.trim()) return galleryPhotos;
 
     const searchLower = searchTerm.toLowerCase().trim();
-    return photos.filter((photo) =>
+    return galleryPhotos.filter((photo) =>
       photo.title.toLowerCase().includes(searchLower) ||
       photo.tags.some((tag) => tag.toLowerCase().includes(searchLower))
     );
-  }, [searchTerm]);
+  }, [searchTerm, galleryPhotos]);
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300 py-8 px-4">
@@ -53,6 +61,13 @@ const App = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold">Photo Gallery</h1>
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowUploadForm(true)}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
+            >
+              <PlusIcon className="h-5 w-5" />
+              Upload Photo
+            </button>
             <button
               onClick={handleViewAllPhotos}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
@@ -73,12 +88,19 @@ const App = () => {
           </div>
         </div>
         <SearchBar searchTerm={searchTerm} onSearchChange={setSearchTerm} />
+
+        {showUploadForm && (
+          <div className="mb-8">
+            <UploadForm onUpload={handleUploadPhoto} />
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredPhotos.map((photo) => (
             <ImageCard
               key={photo.id}
               photo={photo}
-              onClick={handlePhotoClick}
+              onClick={() => handlePhotoClick(photo)}
             />
           ))}
         </div>
